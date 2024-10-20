@@ -21,7 +21,15 @@ public:
     }
   }
 
-  vector() { vector(1); }
+  vector() : vector(1) {}
+
+  vector(const vector &other)
+      : size_(other.size()), capacity_(other.capacity()) {
+    data_ = new T[capacity_];
+    for (size_t i = 0; i < size_; ++i) {
+      data_[i] = other.data_[i];
+    }
+  }
 
   vector(std::initializer_list<T> init_list)
       : capacity_(init_list.size()), size_(init_list.size()),
@@ -43,8 +51,11 @@ public:
   }
 
   T pop_back() {
+    if (size_ < 1) {
+      throw VectorException("Failed to pop empyt vector");
+    }
     T return_value = data_[size_ - 1];
-    data_[size_ - 1] = 0;
+    data_[size_ - 1].~T();
     --size_;
     if ((size_ << 1) <= capacity_) {
       shrink_array();
@@ -68,33 +79,50 @@ public:
   }
 
   T front() const {
-    try {
-      return data_[0];
-    } catch (...) {
+    if (size_ < 1) {
       throw VectorException("Something wrong...");
     }
+    return data_[0];
   }
 
   T back() const {
-    try {
-      return data_[size_ - 1];
-    } catch (...) {
+    if (size_ < 1) {
       throw VectorException("Something wrong...");
     }
+    return data_[size_ - 1];
   }
 
   void operator=(const vector &other) {
+    if (this == &other) {
+      return;
+    }
+    delete[] data_;
     capacity_ = other.capacity();
     size_ = other.size();
-    std::copy(other.begin(), other.end(), data_);
+    data_ = new T[capacity_];
+    for (size_t i = 0; i < size_; ++i) {
+      data_[i] = other.data_[i];
+    }
   }
 
-  T operator[](size_t index) const {
-    try {
-      return data_[index];
-    } catch (...) {
-      throw VectorException("Tried to access element out of vector's bounds");
+  T &operator[](size_t index) {
+    if (size_ < 1) {
+      throw VectorException("Something wrong...");
     }
+    if (index >= size_ || index < 0) {
+      throw VectorException("Out of bounds");
+    }
+    return data_[index];
+  }
+
+  T &operator[](size_t index) const {
+    if (size_ < 1) {
+      throw VectorException("Something wrong...");
+    }
+    if (index >= size_ || index < 0) {
+      throw VectorException("Out of bounds");
+    }
+    return data_[index];
   }
 
   class Iterator {
@@ -129,19 +157,13 @@ public:
   };
 
   Iterator begin() { return Iterator(&data_[0]); }
-  Iterator end() { return Iterator(&data_[size_ - 1]); }
-
-  vector(const vector &other)
-      : size_(other.size()), capacity_(other.capacity()) {
-    data_ = new T[capacity_];
-    std::copy(other.begin(), other.end(), data_);
-  }
+  Iterator end() { return Iterator(&data_[size_]); }
 
   void operator=(std::initializer_list<T> init_list) {
     delete[] data_;
     capacity_ = init_list.size();
     size_ = init_list.size();
-    std::copy(init_list.begin(), init_list.end(), data_);
+    data_ = new T[capacity_];
   }
 
 private:
@@ -169,7 +191,7 @@ private:
     for (size_t i = 0; i < size_; ++i) {
       buffer[i] = data_[i];
     }
-    delete data_;
+    delete[] data_;
     data_ = buffer;
   }
 };
