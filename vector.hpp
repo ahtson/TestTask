@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstddef>
+#include <new>
 #include <string>
 
 class VectorException {
@@ -52,6 +53,7 @@ public:
 
   T pop_back() {
     if (size_ < 1) {
+      delete[] data_;
       throw VectorException("Failed to pop empyt vector");
     }
     T return_value = data_[size_ - 1];
@@ -73,13 +75,15 @@ public:
       delete[] data_;
       data_ = buffer;
       size_ = size;
-    } catch (...) {
+    } catch (std::bad_alloc) {
+      delete[] data_;
       throw VectorException("Failed to resize");
     }
   }
 
   T front() const {
     if (size_ < 1) {
+      delete[] data_;
       throw VectorException("Something wrong...");
     }
     return data_[0];
@@ -87,6 +91,7 @@ public:
 
   T back() const {
     if (size_ < 1) {
+      delete[] data_;
       throw VectorException("Something wrong...");
     }
     return data_[size_ - 1];
@@ -107,20 +112,22 @@ public:
 
   T &operator[](size_t index) {
     if (size_ < 1) {
+      delete[] data_;
+      if (index >= size_ || index < 0) {
+        throw VectorException("Out of bounds");
+      }
       throw VectorException("Something wrong...");
-    }
-    if (index >= size_ || index < 0) {
-      throw VectorException("Out of bounds");
     }
     return data_[index];
   }
 
   T &operator[](size_t index) const {
     if (size_ < 1) {
+      delete[] data_;
+      if (index >= size_ || index < 0) {
+        throw VectorException("Out of bounds");
+      }
       throw VectorException("Something wrong...");
-    }
-    if (index >= size_ || index < 0) {
-      throw VectorException("Out of bounds");
     }
     return data_[index];
   }
@@ -164,6 +171,7 @@ public:
     capacity_ = init_list.size();
     size_ = init_list.size();
     data_ = new T[capacity_];
+    std::copy(init_list.begin(), init_list.end(), data_);
   }
 
 private:
@@ -180,7 +188,8 @@ private:
       }
       delete[] data_;
       data_ = buffer;
-    } catch (...) {
+    } catch (std::bad_alloc) {
+      delete[] data_;
       throw VectorException("Failed to allocate more memory for a vector");
     }
   }
